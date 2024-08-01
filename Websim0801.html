@@ -1,0 +1,279 @@
+<html><head><base href="https://advanced-linear-regression-visualizer.streamlit.app/%E5%86%8D%E5%B9%AB%E6%88%91%E5%91%88%E7%8F%BE%E7%B7%9A%E6%80%A7%E5%9B%9E%E6%AD%B8%E5%9C%96%E8%A1%A8%E4%B8%A6%E7%94%A8%E5%B8%83%E7%BD%AE%E6%88%90%E7%A7%91%E6%8A%80%E6%84%9F%E9%A2%A8%E6%A0%BC">
+<title>高科技風格線性回歸視覺化工具</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+  
+  body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #0a0e17;
+    color: #e0e0e0;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  .container {
+    background-color: #1a1f2e;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,255,255,0.1);
+    padding: 30px;
+    max-width: 1200px;
+    width: 100%;
+  }
+  h1, h2 {
+    color: #00ffff;
+    text-align: center;
+    text-shadow: 0 0 10px rgba(0,255,255,0.5);
+  }
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  .control {
+    display: flex;
+    flex-direction: column;
+  }
+  label {
+    margin-bottom: 10px;
+    color: #00ffff;
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    background: #2a3042;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+  input[type="range"]:hover {
+    opacity: 1;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #00ffff;
+    cursor: pointer;
+  }
+  #plot {
+    width: 100%;
+    height: 500px;
+    margin-bottom: 30px;
+    border: 1px solid #00ffff;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  .metric {
+    background-color: #2a3042;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0,255,255,0.1);
+  }
+  .metric-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #00ffff;
+    margin-top: 10px;
+    text-shadow: 0 0 5px rgba(0,255,255,0.5);
+  }
+  #prediction {
+    text-align: center;
+    background-color: #2a3042;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,255,255,0.1);
+  }
+  #prediction input {
+    background-color: #1a1f2e;
+    border: 1px solid #00ffff;
+    color: #e0e0e0;
+    padding: 10px;
+    margin-right: 10px;
+    border-radius: 5px;
+  }
+  #prediction button {
+    background-color: #00ffff;
+    color: #0a0e17;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s;
+  }
+  #prediction button:hover {
+    background-color: #00cccc;
+    transform: scale(1.05);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>高科技風格線性回歸視覺化工具</h1>
+  
+  <div class="controls">
+    <div class="control">
+      <label for="slope">斜率 (a)</label>
+      <input type="range" id="slope" min="-5" max="5" value="1" step="0.1">
+    </div>
+    <div class="control">
+      <label for="intercept">截距 (b)</label>
+      <input type="range" id="intercept" min="-10" max="10" value="0" step="0.1">
+    </div>
+    <div class="control">
+      <label for="points">數據點數量 (n)</label>
+      <input type="range" id="points" min="50" max="1000" value="200" step="50">
+    </div>
+    <div class="control">
+      <label for="noise">噪聲水平 (σ)</label>
+      <input type="range" id="noise" min="0" max="5" value="1" step="0.1">
+    </div>
+  </div>
+
+  <div id="plot"></div>
+
+  <div class="metrics">
+    <div class="metric">
+      <div>均方誤差 (MSE)</div>
+      <div id="mse" class="metric-value">0.00</div>
+    </div>
+    <div class="metric">
+      <div>R平方值 (R²)</div>
+      <div id="r2" class="metric-value">0.00</div>
+    </div>
+    <div class="metric">
+      <div>估計斜率 (â)</div>
+      <div id="estimated-slope" class="metric-value">0.00</div>
+    </div>
+    <div class="metric">
+      <div>估計截距 (b̂)</div>
+      <div id="estimated-intercept" class="metric-value">0.00</div>
+    </div>
+  </div>
+
+  <div id="prediction">
+    <h2>預測</h2>
+    <input type="number" id="predict-x" min="-10" max="10" step="0.1" value="0">
+    <button onclick="predict()">預測</button>
+    <div id="prediction-result"></div>
+  </div>
+</div>
+
+<script>
+  const slope = document.getElementById('slope');
+  const intercept = document.getElementById('intercept');
+  const points = document.getElementById('points');
+  const noise = document.getElementById('noise');
+
+  function generateData() {
+    const n = parseInt(points.value);
+    const a = parseFloat(slope.value);
+    const b = parseFloat(intercept.value);
+    const sigma = parseFloat(noise.value);
+
+    const x = Array.from({length: n}, () => Math.random() * 20 - 10);
+    const y = x.map(xi => a * xi + b + Math.random() * sigma * (Math.random() > 0.5 ? 1 : -1));
+
+    return {x, y};
+  }
+
+  function linearRegression(x, y) {
+    const n = x.length;
+    const sumX = x.reduce((a, b) => a + b, 0);
+    const sumY = y.reduce((a, b) => a + b, 0);
+    const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+    const sumXX = x.reduce((sum, xi) => sum + xi * xi, 0);
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+
+    return {slope, intercept};
+  }
+
+  function calculateMetrics(x, y, slope, intercept) {
+    const yPred = x.map(xi => slope * xi + intercept);
+    const residuals = y.map((yi, i) => yi - yPred[i]);
+    const sse = residuals.reduce((sum, residual) => sum + residual * residual, 0);
+    const sst = y.reduce((sum, yi) => sum + (yi - (y.reduce((a, b) => a + b, 0) / y.length)) ** 2, 0);
+    const mse = sse / y.length;
+    const r2 = 1 - (sse / sst);
+    return {mse, r2};
+  }
+
+  function updatePlot() {
+    const {x, y} = generateData();
+    const {slope, intercept} = linearRegression(x, y);
+    const {mse, r2} = calculateMetrics(x, y, slope, intercept);
+
+    const trace1 = {
+      x: x,
+      y: y,
+      mode: 'markers',
+      type: 'scatter',
+      name: '數據點',
+      marker: {color: '#00ffff', size: 8, opacity: 0.6}
+    };
+
+    const trace2 = {
+      x: [Math.min(...x), Math.max(...x)],
+      y: [slope * Math.min(...x) + intercept, slope * Math.max(...x) + intercept],
+      mode: 'lines',
+      type: 'scatter',
+      name: '回歸線',
+      line: {color: '#ff00ff', width: 3}
+    };
+
+    const layout = {
+      title: {
+        text: '線性回歸視覺化',
+        font: {color: '#00ffff'}
+      },
+      xaxis: {title: 'X', range: [-10, 10], color: '#e0e0e0'},
+      yaxis: {title: 'Y', color: '#e0e0e0'},
+      showlegend: true,
+      legend: {x: 0, y: 1, font: {color: '#e0e0e0'}},
+      plot_bgcolor: '#1a1f2e',
+      paper_bgcolor: '#1a1f2e',
+      margin: {t: 50, b: 50, l: 50, r: 50}
+    };
+
+    Plotly.newPlot('plot', [trace1, trace2], layout);
+
+    document.getElementById('mse').textContent = mse.toFixed(4);
+    document.getElementById('r2').textContent = r2.toFixed(4);
+    document.getElementById('estimated-slope').textContent = slope.toFixed(4);
+    document.getElementById('estimated-intercept').textContent = intercept.toFixed(4);
+  }
+
+  function predict() {
+    const x = parseFloat(document.getElementById('predict-x').value);
+    const a = parseFloat(slope.value);
+    const b = parseFloat(intercept.value);
+    const y = a * x + b;
+    document.getElementById('prediction-result').textContent = `預測的Y值: ${y.toFixed(2)}`;
+  }
+
+  slope.addEventListener('input', updatePlot);
+  intercept.addEventListener('input', updatePlot);
+  points.addEventListener('input', updatePlot);
+  noise.addEventListener('input', updatePlot);
+
+  updatePlot();
+</script>
+</body></html>
